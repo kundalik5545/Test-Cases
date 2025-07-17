@@ -2,7 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { ChevronLeft, Menu } from "lucide-react";
+import Footer from "@/components/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,7 +22,12 @@ export default function RootLayout({ children }) {
           <AppSidebar />
           <SidebarTrigger />
           {/* Main component */}
-          <main>{children}</main>
+          <main className="container mx-auto px-0 ">
+            {children}
+            <footer className="text-center py-8 border-t border-gray-200">
+              <Footer />
+            </footer>
+          </main>
         </SidebarProvider>
       </body>
     </html>

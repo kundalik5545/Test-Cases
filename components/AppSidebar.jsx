@@ -34,6 +34,13 @@ import Image from "next/image";
 export function AppSidebar({ isCollapsed, setIsCollapsed }) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(
+    isCollapsed || false
+  );
+
+  // Use internal state if setIsCollapsed is not provided
+  const collapsed = isCollapsed !== undefined ? isCollapsed : internalCollapsed;
+  const setCollapsed = setIsCollapsed || setInternalCollapsed;
 
   // Check if device is mobile
   useEffect(() => {
@@ -48,7 +55,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
   }, []);
 
   const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+    setCollapsed(!collapsed);
   };
 
   // Close sidebar when clicking outside on mobile
@@ -56,24 +63,24 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
     const handleClickOutside = (event) => {
       if (
         isMobile &&
-        !isCollapsed &&
+        !collapsed &&
         !event.target.closest(".sidebar-container")
       ) {
-        setIsCollapsed(true);
+        setCollapsed(true);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobile, isCollapsed, setIsCollapsed]);
+  }, [isMobile, collapsed, setCollapsed]);
 
   return (
     <>
       {/* Mobile Overlay */}
-      {isMobile && !isCollapsed && (
+      {isMobile && !collapsed && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-          onClick={() => setIsCollapsed(true)}
+          onClick={() => setCollapsed(true)}
         />
       )}
 
@@ -83,7 +90,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
           onClick={toggleSidebar}
           className="fixed top-4 left-4 z-50 p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 md:hidden hover:bg-gray-50 transition-colors"
         >
-          {isCollapsed ? <Menu size={20} /> : <X size={20} />}
+          {collapsed ? <Menu size={20} /> : <X size={20} />}
         </button>
       )}
 
@@ -92,8 +99,8 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
           className={`
             fixed top-0 left-0 h-screen z-50 
             transition-all duration-300 ease-in-out
-            ${isMobile ? "w-80" : isCollapsed ? "w-16" : "w-64"}
-            ${isMobile && isCollapsed ? "-translate-x-full" : "translate-x-0"}
+            ${isMobile ? "w-80" : collapsed ? "w-16" : "w-64"}
+            ${isMobile && collapsed ? "-translate-x-full" : "translate-x-0"}
             bg-gradient-to-b from-gray-50 to-white
             border-r border-gray-200/60 shadow-xl
             flex flex-col
@@ -115,7 +122,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
                     />
                   </div>
                 </div>
-                {(!isCollapsed || isMobile) && (
+                {(!collapsed || isMobile) && (
                   <div className="flex flex-col">
                     <span className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                       Test{" "}
@@ -139,7 +146,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
                   <ChevronLeft
                     size={16}
                     className={`transition-transform duration-300 ${
-                      isCollapsed ? "rotate-180" : ""
+                      collapsed ? "rotate-180" : ""
                     }`}
                   />
                 </button>
@@ -152,10 +159,10 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
             <SidebarGroup>
               <SidebarGroupLabel
                 className={`text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 ${
-                  isCollapsed && !isMobile ? "text-center" : ""
+                  collapsed && !isMobile ? "text-center" : ""
                 }`}
               >
-                {!isCollapsed || isMobile ? "Navigation" : "•••"}
+                {!collapsed || isMobile ? "Navigation" : "•••"}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="space-y-2">
@@ -281,9 +288,9 @@ const items = [
   },
   {
     title: "Test Report",
-    url: "/test-report",
+    url: "/test-report-generator",
     icon: Upload,
-    badge: "",
+    badge: "3",
   },
   {
     title: "To Do List",

@@ -293,6 +293,12 @@ const items = [
     badge: "3",
   },
   {
+    title: "Test Reports",
+    url: "/test-report",
+    icon: Upload,
+    badge: "3",
+  },
+  {
     title: "To Do List",
     url: "/to-do-list",
     icon: List,

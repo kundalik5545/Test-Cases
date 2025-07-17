@@ -14,11 +14,14 @@ import {
   Clipboard,
   Delete,
   Trash,
+  Files,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 //Custome components
 import ExampleFile from "./_components/Example";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const TestReportGenerator = () => {
   const [testCases, setTestCases] = useState([]);
@@ -259,6 +262,608 @@ const TestReportGenerator = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const exportToPDF = async () => {
+    // Show loading state
+    const loadingToast = document.createElement("div");
+    loadingToast.innerHTML = "Generating PDF...";
+    loadingToast.style.cssText = `
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    background: #3b82f6; color: white; padding: 12px 20px;
+    border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  `;
+    document.body.appendChild(loadingToast);
+
+    let content = null;
+
+    try {
+      // Create content container with proper styling
+      content = document.createElement("div");
+      // content.innerHTML = generateReportHTML();
+      content.innerHTML = generateReportHTML();
+
+      // Fix unsupported CSS color functions like lab(), lch()
+      const allElements = content.querySelectorAll("*");
+
+      allElements.forEach((el) => {
+        const computed = getComputedStyle(el);
+
+        // Fix color
+        if (computed.color.includes("lab(")) {
+          el.style.color = "#333"; // fallback
+        }
+
+        // Fix background color
+        if (computed.backgroundColor.includes("lab(")) {
+          el.style.backgroundColor = "#fff"; // fallback
+        }
+
+        // Optional: force font-family to prevent system rendering issues
+        el.style.fontFamily =
+          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      });
+
+      // Apply styles for better PDF rendering
+      content.style.cssText = `
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      width: 794px;
+      background: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.4;
+      color: #333;
+    `;
+
+      document.body.appendChild(content);
+
+      // Wait for content to be rendered
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Initialize PDF with better settings
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
+
+      const pageWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const margin = 15;
+      const contentWidth = pageWidth - margin * 2;
+
+      let currentY = margin;
+      let isFirstPage = true;
+
+      // Helper function to check if new page is needed
+      const checkNewPage = (requiredHeight) => {
+        if (currentY + requiredHeight > pageHeight - margin) {
+          pdf.addPage();
+          currentY = margin;
+          return true;
+        }
+        return false;
+      };
+
+      // Helper function to render element to PDF
+      const renderElementToPDF = async (element, maxHeight = null) => {
+        if (!element) return 0;
+
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#ffffff",
+          width: element.scrollWidth,
+          height: element.scrollHeight,
+          scrollX: 0,
+          scrollY: 0,
+        });
+
+        const imgData = canvas.toDataURL("image/png", 0.95);
+        const imgWidth = contentWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        const finalHeight = maxHeight
+          ? Math.min(imgHeight, maxHeight)
+          : imgHeight;
+
+        // Check if we need a new page
+        checkNewPage(finalHeight);
+
+        pdf.addImage(imgData, "PNG", margin, currentY, imgWidth, finalHeight);
+        currentY += finalHeight;
+
+        return finalHeight;
+      };
+
+      // Add header section
+      const header = content.querySelector(".header");
+      if (header) {
+        await renderElementToPDF(header, 50);
+        currentY += 10; // Add spacing
+      }
+
+      // Add summary section
+      const summary = content.querySelector(".summary");
+      if (summary) {
+        await renderElementToPDF(summary, 60);
+        currentY += 15; // Add spacing
+      }
+
+      // Add test cases
+      const testCases = content.querySelectorAll(".test-case");
+
+      if (testCases.length === 0) {
+        // Add "No test cases" message
+        checkNewPage(20);
+        pdf.setFontSize(14);
+        pdf.setTextColor(128, 128, 128);
+        pdf.text("No test cases found", margin, currentY);
+      } else {
+        // Add test cases title
+        checkNewPage(20);
+        pdf.setFontSize(16);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text("Test Cases", margin, currentY);
+        currentY += 15;
+
+        // Process each test case
+        for (let i = 0; i < testCases.length; i++) {
+          const testCase = testCases[i];
+
+          // Add some spacing between test cases
+          if (i > 0) {
+            currentY += 10;
+          }
+
+          await renderElementToPDF(testCase);
+
+          // Add small gap after each test case
+          currentY += 5;
+        }
+      }
+
+      // Add footer with timestamp
+      const addFooter = () => {
+        const pageCount = pdf.internal.getNumberOfPages();
+
+        for (let i = 1; i <= pageCount; i++) {
+          pdf.setPage(i);
+          pdf.setFontSize(8);
+          pdf.setTextColor(128, 128, 128);
+
+          // Add timestamp
+          const timestamp = new Date().toLocaleString();
+          pdf.text(`Generated on ${timestamp}`, margin, pageHeight - 10);
+
+          // Add page number
+          pdf.text(
+            `Page ${i} of ${pageCount}`,
+            pageWidth - margin - 20,
+            pageHeight - 10
+          );
+        }
+      };
+
+      addFooter();
+
+      // Generate filename with timestamp
+      const now = new Date();
+      const dateStr = now.toISOString().split("T")[0];
+      const timeStr = now.toTimeString().split(" ")[0].replace(/:/g, "-");
+      const filename = `test-report-${dateStr}-${timeStr}.pdf`;
+
+      // Save the PDF
+      pdf.save(filename);
+
+      // Show success message
+      loadingToast.style.background = "#10b981";
+      loadingToast.innerHTML = "PDF generated successfully!";
+
+      setTimeout(() => {
+        document.body.removeChild(loadingToast);
+      }, 3000);
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+
+      // Show error message
+      loadingToast.style.background = "#ef4444";
+      loadingToast.innerHTML = "PDF generation failed. Please try again.";
+
+      setTimeout(() => {
+        if (document.body.contains(loadingToast)) {
+          document.body.removeChild(loadingToast);
+        }
+      }, 5000);
+
+      // You might want to show a more user-friendly error message
+      // alert('Failed to generate PDF. Please check your browser console for details.');
+    } finally {
+      // Clean up: remove the temporary content
+      if (content && document.body.contains(content)) {
+        document.body.removeChild(content);
+      }
+    }
+  };
+
+  const exportToPDFWithProgress = async () => {
+    // Create progress modal
+    const progressModal = document.createElement("div");
+    progressModal.innerHTML = `
+    <div style="
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.5); z-index: 9999; 
+      display: flex; align-items: center; justify-content: center;
+    ">
+      <div style="
+        background: white; padding: 30px; border-radius: 12px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;
+        min-width: 300px;
+      ">
+        <h3 style="margin: 0 0 20px 0; color: #333;">Generating PDF Report</h3>
+        <div style="
+          width: 100%; height: 8px; background: #e5e7eb; 
+          border-radius: 4px; overflow: hidden; margin: 20px 0;
+        ">
+          <div id="progress-bar" style="
+            width: 0%; height: 100%; background: #3b82f6; 
+            transition: width 0.3s ease; border-radius: 4px;
+          "></div>
+        </div>
+        <p id="progress-text" style="margin: 0; color: #666; font-size: 14px;">
+          Preparing content...
+        </p>
+      </div>
+    </div>
+  `;
+    document.body.appendChild(progressModal);
+
+    const progressBar = progressModal.querySelector("#progress-bar");
+    const progressText = progressModal.querySelector("#progress-text");
+
+    const updateProgress = (percent, text) => {
+      progressBar.style.width = percent + "%";
+      progressText.textContent = text;
+    };
+
+    let content = null;
+
+    try {
+      updateProgress(10, "Creating content...");
+
+      content = document.createElement("div");
+      content.innerHTML = generateReportHTML();
+      content.style.cssText = `
+            position: absolute; 
+            top: -9999px; 
+            left: -9999px; 
+            width: 794px;
+            background: white; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #000000; /* Force black text to avoid LAB issues */
+        `;
+      document.body.appendChild(content);
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      updateProgress(20, "Initializing PDF...");
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+        putOnlyUsedFonts: true,
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 15;
+      const contentWidth = pageWidth - margin * 2;
+      let currentY = margin;
+
+      const renderElementToPDF = async (element, maxHeight = null) => {
+        if (!element) return 0;
+
+        // Force RGB color space for the element
+        const originalStyles = window.getComputedStyle(element);
+        element.style.color = originalStyles.color;
+        element.style.backgroundColor = originalStyles.backgroundColor;
+
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+          colorCheck: true, // Important for color issues
+          onclone: (clonedDoc) => {
+            // Ensure all elements use RGB colors
+            const allElements = clonedDoc.querySelectorAll("*");
+            allElements.forEach((el) => {
+              const styles = window.getComputedStyle(el);
+              el.style.color = styles.color;
+              el.style.backgroundColor = styles.backgroundColor;
+              el.style.borderColor = styles.borderColor;
+            });
+          },
+        });
+
+        const imgData = canvas.toDataURL("image/jpeg", 0.95); // Using JPEG can help with color issues
+        const imgWidth = contentWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const finalHeight = maxHeight
+          ? Math.min(imgHeight, maxHeight)
+          : imgHeight;
+
+        if (currentY + finalHeight > pageHeight - margin) {
+          pdf.addPage();
+          currentY = margin;
+        }
+
+        pdf.addImage(imgData, "JPEG", margin, currentY, imgWidth, finalHeight);
+        currentY += finalHeight;
+        return finalHeight;
+      };
+
+      // Process sections with progress updates
+      updateProgress(30, "Adding header...");
+      const header = content.querySelector(".header");
+      if (header) {
+        await renderElementToPDF(header, 50);
+        currentY += 10;
+      }
+
+      updateProgress(40, "Adding summary...");
+      const summary = content.querySelector(".summary");
+      if (summary) {
+        await renderElementToPDF(summary, 60);
+        currentY += 15;
+      }
+
+      updateProgress(50, "Processing test cases...");
+      const testCases = content.querySelectorAll(".test-case");
+
+      if (testCases.length > 0) {
+        for (let i = 0; i < testCases.length; i++) {
+          const progress = 50 + (i / testCases.length) * 40;
+          updateProgress(
+            progress,
+            `Processing test case ${i + 1} of ${testCases.length}...`
+          );
+
+          if (i > 0) currentY += 10;
+          await renderElementToPDF(testCases[i]);
+          currentY += 5;
+        }
+      }
+
+      updateProgress(90, "Finalizing PDF...");
+
+      // Add footer
+      const pageCount = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(50, 50, 50); // Use explicit RGB values
+
+        const timestamp = new Date().toLocaleString();
+        pdf.text(`Generated on ${timestamp}`, margin, pageHeight - 10);
+        pdf.text(
+          `Page ${i} of ${pageCount}`,
+          pageWidth - margin - 20,
+          pageHeight - 10
+        );
+      }
+
+      updateProgress(100, "Saving PDF...");
+
+      const now = new Date();
+      const dateStr = now.toISOString().split("T")[0];
+      const timeStr = now.toTimeString().split(" ")[0].replace(/:/g, "-");
+      const filename = `test-report-${dateStr}-${timeStr}.pdf`;
+
+      pdf.save(filename);
+
+      // Show success and close modal
+      setTimeout(() => {
+        document.body.removeChild(progressModal);
+      }, 1000);
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      progressText.textContent = "PDF generation failed. Please try again.";
+      progressBar.style.background = "#ef4444";
+
+      setTimeout(() => {
+        if (document.body.contains(progressModal)) {
+          document.body.removeChild(progressModal);
+        }
+      }, 3000);
+    } finally {
+      if (content && document.body.contains(content)) {
+        document.body.removeChild(content);
+      }
+    }
+  };
+
+  // Alternative version with progress tracking
+  // const exportToPDFWithProgress = async () => {
+  //   // Create progress modal
+  //   const progressModal = document.createElement("div");
+  //   progressModal.innerHTML = `
+  //   <div style="
+  //     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  //     background: rgba(0,0,0,0.5); z-index: 9999;
+  //     display: flex; align-items: center; justify-content: center;
+  //   ">
+  //     <div style="
+  //       background: white; padding: 30px; border-radius: 12px;
+  //       box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;
+  //       min-width: 300px;
+  //     ">
+  //       <h3 style="margin: 0 0 20px 0; color: #333;">Generating PDF Report</h3>
+  //       <div style="
+  //         width: 100%; height: 8px; background: #e5e7eb;
+  //         border-radius: 4px; overflow: hidden; margin: 20px 0;
+  //       ">
+  //         <div id="progress-bar" style="
+  //           width: 0%; height: 100%; background: #3b82f6;
+  //           transition: width 0.3s ease; border-radius: 4px;
+  //         "></div>
+  //       </div>
+  //       <p id="progress-text" style="margin: 0; color: #666; font-size: 14px;">
+  //         Preparing content...
+  //       </p>
+  //     </div>
+  //   </div>
+  // `;
+  //   document.body.appendChild(progressModal);
+
+  //   const progressBar = progressModal.querySelector("#progress-bar");
+  //   const progressText = progressModal.querySelector("#progress-text");
+
+  //   const updateProgress = (percent, text) => {
+  //     progressBar.style.width = percent + "%";
+  //     progressText.textContent = text;
+  //   };
+
+  //   let content = null;
+
+  //   try {
+  //     updateProgress(10, "Creating content...");
+
+  //     content = document.createElement("div");
+  //     content.innerHTML = generateReportHTML();
+  //     content.style.cssText = `
+  //     position: absolute; top: -9999px; left: -9999px; width: 794px;
+  //     background: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  //   `;
+  //     document.body.appendChild(content);
+
+  //     await new Promise((resolve) => setTimeout(resolve, 100));
+  //     updateProgress(20, "Initializing PDF...");
+
+  //     const pdf = new jsPDF({
+  //       orientation: "portrait",
+  //       unit: "mm",
+  //       format: "a4",
+  //       compress: true,
+  //     });
+
+  //     const pageWidth = 210;
+  //     const pageHeight = 297;
+  //     const margin = 15;
+  //     const contentWidth = pageWidth - margin * 2;
+  //     let currentY = margin;
+
+  //     const renderElementToPDF = async (element, maxHeight = null) => {
+  //       if (!element) return 0;
+
+  //       const canvas = await html2canvas(element, {
+  //         scale: 2,
+  //         useCORS: true,
+  //         allowTaint: true,
+  //         backgroundColor: "#ffffff",
+  //       });
+
+  //       const imgData = canvas.toDataURL("image/png", 0.95);
+  //       const imgWidth = contentWidth;
+  //       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  //       const finalHeight = maxHeight
+  //         ? Math.min(imgHeight, maxHeight)
+  //         : imgHeight;
+
+  //       if (currentY + finalHeight > pageHeight - margin) {
+  //         pdf.addPage();
+  //         currentY = margin;
+  //       }
+
+  //       pdf.addImage(imgData, "PNG", margin, currentY, imgWidth, finalHeight);
+  //       currentY += finalHeight;
+  //       return finalHeight;
+  //     };
+
+  //     // Process sections with progress updates
+  //     updateProgress(30, "Adding header...");
+  //     const header = content.querySelector(".header");
+  //     if (header) {
+  //       await renderElementToPDF(header, 50);
+  //       currentY += 10;
+  //     }
+
+  //     updateProgress(40, "Adding summary...");
+  //     const summary = content.querySelector(".summary");
+  //     if (summary) {
+  //       await renderElementToPDF(summary, 60);
+  //       currentY += 15;
+  //     }
+
+  //     updateProgress(50, "Processing test cases...");
+  //     const testCases = content.querySelectorAll(".test-case");
+
+  //     if (testCases.length > 0) {
+  //       for (let i = 0; i < testCases.length; i++) {
+  //         const progress = 50 + (i / testCases.length) * 40;
+  //         updateProgress(
+  //           progress,
+  //           `Processing test case ${i + 1} of ${testCases.length}...`
+  //         );
+
+  //         if (i > 0) currentY += 10;
+  //         await renderElementToPDF(testCases[i]);
+  //         currentY += 5;
+  //       }
+  //     }
+
+  //     updateProgress(90, "Finalizing PDF...");
+
+  //     // Add footer
+  //     const pageCount = pdf.internal.getNumberOfPages();
+  //     for (let i = 1; i <= pageCount; i++) {
+  //       pdf.setPage(i);
+  //       pdf.setFontSize(8);
+  //       pdf.setTextColor(128, 128, 128);
+
+  //       const timestamp = new Date().toLocaleString();
+  //       pdf.text(`Generated on ${timestamp}`, margin, pageHeight - 10);
+  //       pdf.text(
+  //         `Page ${i} of ${pageCount}`,
+  //         pageWidth - margin - 20,
+  //         pageHeight - 10
+  //       );
+  //     }
+
+  //     updateProgress(100, "Saving PDF...");
+
+  //     const now = new Date();
+  //     const dateStr = now.toISOString().split("T")[0];
+  //     const timeStr = now.toTimeString().split(" ")[0].replace(/:/g, "-");
+  //     const filename = `test-report-${dateStr}-${timeStr}.pdf`;
+
+  //     pdf.save(filename);
+
+  //     // Show success and close modal
+  //     setTimeout(() => {
+  //       document.body.removeChild(progressModal);
+  //     }, 1000);
+  //   } catch (error) {
+  //     console.error("PDF generation failed:", error);
+  //     progressText.textContent = "PDF generation failed. Please try again.";
+  //     progressBar.style.background = "#ef4444";
+
+  //     setTimeout(() => {
+  //       if (document.body.contains(progressModal)) {
+  //         document.body.removeChild(progressModal);
+  //       }
+  //     }, 3000);
+  //   } finally {
+  //     if (content && document.body.contains(content)) {
+  //       document.body.removeChild(content);
+  //     }
+  //   }
+  // };
 
   const generateReportHTML = () => {
     const reportHTML = `
@@ -507,6 +1112,10 @@ const TestReportGenerator = () => {
           <Button variant="secondary" onClick={exportToWord}>
             <FileText size={16} />
             Export to Word
+          </Button>
+          <Button variant="secondary" onClick={exportToPDFWithProgress}>
+            <Files size={16} />
+            Export to PDF
           </Button>
           <Button variant="secondary" onClick={exportToExcel}>
             <FileSpreadsheet size={16} />

@@ -12,6 +12,8 @@ import {
   Menu,
   ChevronLeft,
   X,
+  Bug,
+  Plus,
 } from "lucide-react";
 import {
   Sidebar,
@@ -287,16 +289,22 @@ const items = [
     icon: Home,
   },
   {
+    title: "Single TC",
+    url: "/create-single-test-case",
+    icon: Plus,
+    badge: "",
+  },
+  {
     title: "Test Report",
     url: "/test-report-generator",
     icon: Upload,
-    badge: "3",
+    badge: "",
   },
   {
-    title: "Test Reports",
-    url: "/test-report",
-    icon: Upload,
-    badge: "3",
+    title: "Bug",
+    url: "/bug-report",
+    icon: Bug,
+    badge: "",
   },
   {
     title: "To Do List",

@@ -149,7 +149,10 @@ const generateReportHTML = ({ taskDetails, steps }) => {
               <img src="${step.image}" alt="Screenshot for Step ${
               index + 1
             }" class="screenshot " />
+            <p class="align-left"><strong>Notes :</strong> 
+              ${step.notes} </p>
             </div> 
+        
             `
           )
           .join("")} 

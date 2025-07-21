@@ -15,6 +15,8 @@ import {
   Bug,
   Plus,
   Download,
+  Rocket,
+  Eye,
 } from "lucide-react";
 import {
   Sidebar,
@@ -292,23 +294,36 @@ const items = [
     icon: Home,
   },
   {
-    title: "Single TC",
+    title: "Single TC Report",
     url: "/create-single-test-case",
     icon: Plus,
     badge: "",
   },
   {
-    title: "Test Report",
+    title: "Multiple TC Report",
     url: "/test-report-generator",
     icon: Upload,
     badge: "",
   },
   {
-    title: "Bug",
+    title: "Create TC",
+    url: "/add-test-case",
+    icon: Rocket,
+    badge: "",
+  },
+  {
+    title: "View TC",
+    url: "/view-test-case",
+    icon: Eye,
+    badge: "",
+  },
+  {
+    title: "Create Bug",
     url: "/create-bug",
     icon: Bug,
     badge: "",
   },
+
   {
     title: "To Do List",
     url: "/to-do-list",

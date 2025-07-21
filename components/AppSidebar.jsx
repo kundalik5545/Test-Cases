@@ -302,7 +302,7 @@ const items = [
   },
   {
     title: "Bug",
-    url: "/bug-report",
+    url: "/create-bug",
     icon: Bug,
     badge: "",
   },

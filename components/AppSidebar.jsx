@@ -14,6 +14,7 @@ import {
   X,
   Bug,
   Plus,
+  Download,
 } from "lucide-react";
 import {
   Sidebar,
@@ -261,17 +262,19 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
             {(!isCollapsed || isMobile) && (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">U</span>
+                  <span className="text-white text-sm font-bold">JK</span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">John Doe</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    Kundalik Jadhav
+                  </p>
                   <p className="text-xs text-gray-500">Administrator</p>
                 </div>
               </div>
             )}
             {isCollapsed && !isMobile && (
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
-                <span className="text-white text-sm font-bold">U</span>
+                <span className="text-white text-sm font-bold">JK</span>
               </div>
             )}
           </SidebarFooter>
@@ -316,6 +319,11 @@ const items = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Downloads",
+    url: "/download",
+    icon: Download,
   },
   {
     title: "Settings",

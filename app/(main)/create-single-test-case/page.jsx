@@ -34,6 +34,7 @@ import {
   Media,
 } from "docx";
 import exportToWordAsDocx from "./_components/ExportAsDocx";
+import { Label } from "@/components/ui/label";
 
 const STORAGE_KEY = "test_case_report";
 
@@ -214,9 +215,9 @@ const SingleTestPage = () => {
             </tr>
             <tr>
               <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f9fafb;">Task URL:</td>
-              <td style="border: 1px solid #ddd; padding: 8px;">${
-                taskDetails.taskUrl || "N/A"
-              }</td>
+              <td style="border: 1px solid #ddd; padding: 8px;"> <a href="${
+                taskDetails.taskUrl
+              }"> ${taskDetails.taskUrl || "N/A"}</td> </a> </td>
             </tr>
             <tr>
               <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold; background-color: #f9fafb;">Tester Name:</td>
@@ -749,7 +750,8 @@ const SingleTestPage = () => {
             <DialogHeader>
               <DialogTitle>Add Test Step</DialogTitle>
             </DialogHeader>
-
+            <hr />
+            <Label>Step Description</Label>
             <Textarea
               placeholder="Step Description"
               value={newStepData.description}
@@ -758,20 +760,27 @@ const SingleTestPage = () => {
               }
               className="mb-3"
             />
+            <Label>Upload or Paste Screenshot</Label>
+
             <Input
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
               className="mb-3"
             />
+
             {newStepData.image && (
-              <img
-                src={newStepData.image}
-                alt="Preview"
-                className="rounded mb-3 border max-h-60 object-contain"
-              />
+              <div className="space-y-4">
+                <Label className="">Imgae Preview</Label>
+                <img
+                  src={newStepData.image}
+                  alt="Preview"
+                  className="rounded mb-3 border max-h-60 object-contain"
+                />
+              </div>
             )}
 
+            <Label>Notes</Label>
             <Textarea
               placeholder="Notes (optional)"
               value={newStepData.notes}

@@ -703,8 +703,8 @@ const SingleTestPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-5 bg-white shadow rounded-lg">
-      <h1 className="py-3 text-3xl font-bold text-gray-800">
+    <div className="container mx-auto p-3 bg-white shadow rounded-lg ">
+      <h1 className="py-3 text-xl md:text-3xl font-bold text-gray-800">
         📝 Test Case Report Generator
       </h1>
 
@@ -794,39 +794,42 @@ const SingleTestPage = () => {
           </DialogContent>
         </Dialog>
 
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="include-date-checkbox"
-            className="text-sm text-gray-700 cursor-pointer select-none"
-          >
-            Date in Report
-          </label>
-          <input
-            id="include-date-checkbox"
-            type="checkbox"
-            checked={!!includeDate}
-            onChange={(e) => setIncludeDate(e.target.checked)}
-            className="accent-blue-600 w-4 h-4"
-          />
+        <div className="checkbox-items flex space-x-3">
+          <div className="checbox-item flex items-center gap-2">
+            <label
+              htmlFor="include-date-checkbox"
+              className="text-sm text-gray-700 cursor-pointer select-none"
+            >
+              Date in Report
+            </label>
+            <input
+              id="include-date-checkbox"
+              type="checkbox"
+              checked={!!includeDate}
+              onChange={(e) => setIncludeDate(e.target.checked)}
+              className="accent-blue-600 w-4 h-4"
+            />
+          </div>
+
+          {/* Basic Details */}
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="show-basic-details-checkbox"
+              className="text-sm text-gray-700 cursor-pointer select-none"
+            >
+              Show Basic Details
+            </label>
+            <input
+              id="show-basic-details-checkbox"
+              type="checkbox"
+              checked={!!showBasicDetails}
+              onChange={(e) => setShowBasicDetails(e.target.checked)}
+              className="accent-blue-600 w-4 h-4"
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="show-basic-details-checkbox"
-            className="text-sm text-gray-700 cursor-pointer select-none"
-          >
-            Show Basic Details
-          </label>
-          <input
-            id="show-basic-details-checkbox"
-            type="checkbox"
-            checked={!!showBasicDetails}
-            onChange={(e) => setShowBasicDetails(e.target.checked)}
-            className="accent-blue-600 w-4 h-4"
-          />
-        </div>
-
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <Button variant="secondary" onClick={exportToWord}>
             <Code size={16} />
             Export to Html

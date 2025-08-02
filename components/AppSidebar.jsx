@@ -82,22 +82,22 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
   return (
     <>
       {/* Mobile Overlay */}
-      {isMobile && !collapsed && (
+      {/* {isMobile && !collapsed && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setCollapsed(true)}
         />
-      )}
+      )} */}
 
       {/* Mobile Menu Button */}
-      {isMobile && (
+      {/* {isMobile && (
         <button
           onClick={toggleSidebar}
           className="fixed top-4 left-4 z-50 p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 md:hidden hover:bg-gray-50 transition-colors"
         >
           {collapsed ? <Menu size={20} /> : <X size={20} />}
         </button>
-      )}
+      )} */}
 
       <div className="sidebar-container">
         <Sidebar
@@ -146,7 +146,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }) {
               {!isMobile && (
                 <button
                   onClick={toggleSidebar}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="sidebar-button p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <ChevronLeft
                     size={16}

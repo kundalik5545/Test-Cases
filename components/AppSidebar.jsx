@@ -312,6 +312,12 @@ const items = [
     badge: "",
   },
   {
+    title: "Test Cases",
+    url: "/test-cases",
+    icon: List,
+    badge: "",
+  },
+  {
     title: "View TC",
     url: "/view-test-case",
     icon: Eye,

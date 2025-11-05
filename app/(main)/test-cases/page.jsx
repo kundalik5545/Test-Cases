@@ -342,6 +342,7 @@ export default function TestCases() {
             )}
           </TableBody>
         </Table>
+
         {/* Pagination Controls */}
         <div className="flex items-center justify-between px-3 py-2 gap-2 bg-muted/20">
           <span className="text-sm">
@@ -370,6 +371,7 @@ export default function TestCases() {
           </div>
         </div>
       </div>
+
       {/* Add Modal */}
       <FormModal
         open={addOpen}
@@ -382,6 +384,7 @@ export default function TestCases() {
           onCancel={() => setAddOpen(false)}
         />
       </FormModal>
+
       {/* Edit Modal */}
       <FormModal
         open={editOpen}
